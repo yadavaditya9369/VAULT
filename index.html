@@ -1,0 +1,67 @@
+"""
+VAULT — replication engine.
+
+Everything about *where replicas physically live* and *how they get
+placed and rebuilt* lives here, separate from the HTTP layer (main.py)
+and the database layer (database.py). In this demo, each storage node
+is a real folder on disk under VAULT_STORAGE_DIR/<node_id>/ — so
+"copying to 3 nodes" really does write 3 separate files.
+"""
+
+import hashlib
+import os
+import random
+import shutil
+
+STORAGE_DIR = os.environ.get("VAULT_STORAGE_DIR", "./storage")
+CHUNK_SIZE = 1024 * 1024  # 1 MB
+
+
+def node_path(node_id: str) -> str:
+    """Folder that represents one storage node's local disk."""
+    path = os.path.join(STORAGE_DIR, node_id)
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def replica_file_path(node_id: str, object_id: str) -> str:
+    return os.path.join(node_path(node_id), object_id)
+
+
+def sha256_of_file(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        while True:
+            chunk = f.read(CHUNK_SIZE)
+            if not chunk:
+                break
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def choose_replica_nodes(healthy_node_ids: list, count: int, exclude=frozenset()) -> list:
+    """
+    Pick `count` DISTINCT nodes from the healthy pool. random.sample never
+    returns duplicates, so this is what guarantees a replica set can never
+    land twice on the same node.
+    """
+    candidates = [n for n in healthy_node_ids if n not in exclude]
+    if len(candidates) < count:
+        raise ValueError(
+            f"Not enough healthy nodes to place {count} replica(s) "
+            f"(only {len(candidates)} healthy node(s) available)"
+        )
+    return random.sample(candidates, count)
+
+
+def write_replica(source_path: str, node_id: str, object_id: str):
+    """
+    Copy the object's bytes onto a node's simulated disk, then hash the
+    copy that actually landed there. Returns (dest_path, checksum) so the
+    caller can compare the copy's checksum against the original and only
+    mark it HEALTHY if they truly match.
+    """
+    dest = replica_file_path(node_id, object_id)
+    shutil.copyfile(source_path, dest)
+    checksum = sha256_of_file(dest)
+    return dest, checksum

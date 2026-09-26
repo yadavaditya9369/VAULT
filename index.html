@@ -1,2259 +1,521 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VAULT — Distributed Object Storage</title>
-
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            background: #0b1020;
-            color: #e8ecf7;
-            min-height: 100vh;
-        }
-
-        .app {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        /* SIDEBAR */
-        .sidebar {
-            width: 250px;
-            background: #11182b;
-            border-right: 1px solid #26304a;
-            padding: 20px 15px;
-            position: fixed;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            overflow-y: auto;
-        }
-
-        .logo {
-            font-size: 25px;
-            font-weight: bold;
-            color: #6ea8fe;
-            margin-bottom: 30px;
-            padding: 10px;
-        }
-
-        .logo span {
-            color: #fff;
-        }
-
-        .nav-title {
-            color: #69748f;
-            font-size: 11px;
-            margin: 20px 10px 8px;
-            text-transform: uppercase;
-        }
-
-        .nav-item {
-            padding: 11px 13px;
-            border-radius: 8px;
-            margin: 4px 0;
-            cursor: pointer;
-            color: #aeb8d0;
-            transition: 0.2s;
-        }
-
-        .nav-item:hover,
-        .nav-item.active {
-            background: #1d2945;
-            color: #fff;
-        }
-
-        /* MAIN */
-        .main {
-            margin-left: 250px;
-            width: calc(100% - 250px);
-        }
-
-        .topbar {
-            height: 70px;
-            border-bottom: 1px solid #26304a;
-            background: #0e1527;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 25px;
-            position: sticky;
-            top: 0;
-            z-index: 20;
-        }
-
-        .search {
-            width: 350px;
-            background: #151e34;
-            border: 1px solid #2b3855;
-            color: white;
-            padding: 11px 15px;
-            border-radius: 8px;
-            outline: none;
-        }
-
-        .user {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .avatar {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            background: #2563eb;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-
-        .content {
-            padding: 25px;
-        }
-
-        .page {
-            display: none;
-        }
-
-        .page.active {
-            display: block;
-        }
-
-        h1 {
-            font-size: 28px;
-            margin-bottom: 8px;
-        }
-
-        .subtitle {
-            color: #8490aa;
-            margin-bottom: 25px;
-        }
-
-        /* CARDS */
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 18px;
-            margin-bottom: 25px;
-        }
-
-        .card {
-            background: #121a2e;
-            border: 1px solid #26304a;
-            border-radius: 12px;
-            padding: 20px;
-        }
-
-        .card-title {
-            color: #8d98b2;
-            font-size: 13px;
-            margin-bottom: 12px;
-        }
-
-        .card-value {
-            font-size: 27px;
-            font-weight: bold;
-        }
-
-        .green {
-            color: #32d583;
-        }
-
-        .blue {
-            color: #6ea8fe;
-        }
-
-        .orange {
-            color: #ffb454;
-        }
-
-        .red {
-            color: #ff6675;
-        }
-
-        /* GRID */
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .panel {
-            background: #121a2e;
-            border: 1px solid #26304a;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 18px;
-        }
-
-        .panel-title {
-            font-size: 17px;
-            font-weight: bold;
-        }
-
-        /* BUTTONS */
-        button {
-            border: none;
-            border-radius: 7px;
-            padding: 10px 15px;
-            cursor: pointer;
-            color: white;
-            font-weight: bold;
-        }
-
-        .btn-primary {
-            background: #2563eb;
-        }
-
-        .btn-primary:hover {
-            background: #1d4ed8;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-        }
-
-        .btn-success {
-            background: #16a34a;
-        }
-
-        .btn-secondary {
-            background: #28344f;
-        }
-
-        /* TABLE */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 13px;
-            text-align: left;
-            border-bottom: 1px solid #25304a;
-        }
-
-        th {
-            color: #8490aa;
-            font-size: 12px;
-        }
-
-        td {
-            font-size: 14px;
-        }
-
-        .status {
-            display: inline-block;
-            padding: 5px 9px;
-            border-radius: 20px;
-            font-size: 11px;
-        }
-
-        .status-online {
-            background: #123c2c;
-            color: #32d583;
-        }
-
-        .status-warning {
-            background: #473713;
-            color: #ffb454;
-        }
-
-        .status-offline {
-            background: #451c24;
-            color: #ff6675;
-        }
-
-        /* PROGRESS */
-        .progress {
-            height: 8px;
-            background: #222c43;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .progress-bar {
-            height: 100%;
-            background: #2563eb;
-            border-radius: 10px;
-        }
-
-        /* UPLOAD */
-        .upload-box {
-            border: 2px dashed #33415f;
-            border-radius: 12px;
-            padding: 40px;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .upload-box:hover {
-            border-color: #2563eb;
-            background: #111b31;
-        }
-
-        .upload-icon {
-            font-size: 45px;
-            margin-bottom: 15px;
-        }
-
-        input[type="file"] {
-            display: none;
-        }
-
-        /* NODES */
-        .node-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 15px;
-        }
-
-        .node {
-            background: #151e34;
-            border: 1px solid #293650;
-            border-radius: 10px;
-            padding: 18px;
-        }
-
-        .node-head {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-        }
-
-        .node-name {
-            font-weight: bold;
-        }
-
-        .node-dot {
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-            background: #32d583;
-            margin-top: 5px;
-        }
-
-        /* LOG */
-        .log {
-            padding: 12px 0;
-            border-bottom: 1px solid #222d46;
-            font-size: 13px;
-        }
-
-        .log-time {
-            color: #68738c;
-            margin-right: 10px;
-        }
-
-        /* TOAST */
-        .toast {
-            position: fixed;
-            right: 25px;
-            bottom: 25px;
-            background: #18233b;
-            border: 1px solid #33415f;
-            padding: 15px 20px;
-            border-radius: 9px;
-            display: none;
-            z-index: 100;
-        }
-
-        /* MODAL */
-        .modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 90;
-        }
-
-        .modal-box {
-            width: 500px;
-            background: #121a2e;
-            border: 1px solid #33415f;
-            border-radius: 12px;
-            padding: 25px;
-        }
-
-        .modal-box h2 {
-            margin-bottom: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 7px;
-            color: #aeb8d0;
-        }
-
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 11px;
-            background: #0c1425;
-            color: white;
-            border: 1px solid #34415d;
-            border-radius: 7px;
-            outline: none;
-        }
-
-        /* LOGIN */
-        .login {
-            position: fixed;
-            inset: 0;
-            background: #080d19;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 200;
-        }
-
-        .login-box {
-            width: 400px;
-            background: #121a2e;
-            border: 1px solid #293650;
-            border-radius: 15px;
-            padding: 35px;
-        }
-
-        .login-box h1 {
-            text-align: center;
-            color: #6ea8fe;
-            margin-bottom: 30px;
-        }
-
-        .login-box input {
-            width: 100%;
-            padding: 13px;
-            margin-bottom: 15px;
-            background: #0c1425;
-            color: white;
-            border: 1px solid #34415d;
-            border-radius: 7px;
-        }
-
-        .login-box button {
-            width: 100%;
-        }
-
-        /* RESPONSIVE */
-        @media(max-width:1100px) {
-            .cards {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .node-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-
-        @media(max-width:750px) {
-            .sidebar {
-                width: 70px;
-            }
-
-            .logo {
-                font-size: 0;
-            }
-
-            .logo:first-letter {
-                font-size: 25px;
-            }
-
-            .nav-item {
-                font-size: 0;
-                text-align: center;
-            }
-
-            .main {
-                margin-left: 70px;
-                width: calc(100% - 70px);
-            }
-
-            .search {
-                width: 200px;
-            }
-
-            .cards,
-            .grid-2 {
-                grid-template-columns: 1fr;
-            }
-
-            .node-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>VAULT - Distributed Object Storage</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,Helvetica,sans-serif;
+}
+
+body{
+    background:#08111f;
+    color:#e8eef7;
+    min-height:100vh;
+}
+
+.app{
+    display:flex;
+    min-height:100vh;
+}
+
+/* SIDEBAR */
+.sidebar{
+    width:240px;
+    background:#0d1828;
+    border-right:1px solid #203047;
+    padding:20px 14px;
+    position:fixed;
+    left:0;
+    top:0;
+    bottom:0;
+    overflow-y:auto;
+}
+
+.logo{
+    font-size:25px;
+    font-weight:bold;
+    margin-bottom:5px;
+}
+
+.logo span{
+    color:#36b9ff;
+}
+
+.subtitle{
+    color:#8091a7;
+    font-size:12px;
+    margin-bottom:25px;
+}
+
+.menu-title{
+    color:#64758d;
+    font-size:11px;
+    margin:18px 10px 8px;
+    text-transform:uppercase;
+}
+
+.menu button{
+    width:100%;
+    border:0;
+    background:transparent;
+    color:#aebbd0;
+    text-align:left;
+    padding:11px 12px;
+    border-radius:8px;
+    margin:2px 0;
+    cursor:pointer;
+    font-size:14px;
+}
+
+.menu button:hover,
+.menu button.active{
+    background:#172940;
+    color:#fff;
+}
+
+/* MAIN */
+.main{
+    margin-left:240px;
+    width:calc(100% - 240px);
+    padding:25px;
+}
+
+.topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:25px;
+}
+
+.topbar h1{
+    font-size:25px;
+}
+
+.status{
+    background:#102a21;
+    border:1px solid #1f6b50;
+    padding:8px 14px;
+    border-radius:20px;
+    color:#55e6a7;
+    font-size:13px;
+}
+
+/* CARDS */
+.metrics{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:15px;
+    margin-bottom:20px;
+}
+
+.card{
+    background:#0d1929;
+    border:1px solid #1e3047;
+    border-radius:12px;
+    padding:18px;
+    margin-bottom:18px;
+}
+
+.metric-title{
+    color:#7e90a8;
+    font-size:13px;
+    margin-bottom:8px;
+}
+
+.metric-value{
+    font-size:27px;
+    font-weight:bold;
+}
+
+.metric-small{
+    color:#57dca0;
+    font-size:12px;
+    margin-top:5px;
+}
+
+/* GRID */
+.grid{
+    display:grid;
+    grid-template-columns:2fr 1fr;
+    gap:18px;
+}
+
+.card h2{
+    font-size:17px;
+    margin-bottom:15px;
+}
+
+.card p{
+    color:#aab8ca;
+    line-height:1.6;
+    font-size:14px;
+}
+
+/* TOPOLOGY */
+.nodes{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:12px;
+}
+
+.node{
+    border:1px solid #28425f;
+    background:#101f32;
+    padding:14px;
+    border-radius:10px;
+    text-align:center;
+}
+
+.node.online{
+    border-color:#23674e;
+}
+
+.node.offline{
+    border-color:#8b3943;
+    background:#28151b;
+}
+
+.node-icon{
+    font-size:24px;
+    margin-bottom:7px;
+}
+
+.node-name{
+    font-weight:bold;
+    font-size:13px;
+}
+
+.online-text{
+    color:#4ce09d;
+    font-size:11px;
+    margin-top:5px;
+}
+
+.offline-text{
+    color:#ff6675;
+    font-size:11px;
+    margin-top:5px;
+}
+
+/* TABLE */
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th,td{
+    padding:11px;
+    text-align:left;
+    border-bottom:1px solid #203047;
+    font-size:13px;
+}
+
+th{
+    color:#8192aa;
+}
+
+.badge{
+    padding:4px 9px;
+    border-radius:12px;
+    font-size:11px;
+}
+
+.badge.green{
+    color:#54dfa1;
+    background:#102d22;
+}
+
+.badge.red{
+    color:#ff6877;
+    background:#32151b;
+}
+
+.badge.blue{
+    color:#58bfff;
+    background:#102b3c;
+}
+
+/* BUTTONS */
+.btn{
+    background:#1687d9;
+    color:white;
+    border:0;
+    padding:10px 15px;
+    border-radius:7px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.btn:hover{
+    background:#0d70b8;
+}
+
+.btn.danger{
+    background:#a93445;
+}
+
+.btn.success{
+    background:#17885c;
+}
+
+.btn.secondary{
+    background:#26374d;
+}
+
+.actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+/* TEST */
+.test-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:11px 0;
+    border-bottom:1px solid #203047;
+}
+
+.pass{
+    color:#4ee09d;
+    font-weight:bold;
+}
+
+/* PROBLEM */
+.problem-box{
+    border-left:4px solid #38aef5;
+    padding-left:15px;
+}
+
+/* LOG */
+.logs{
+    max-height:230px;
+    overflow-y:auto;
+}
+
+.log{
+    padding:9px;
+    border-bottom:1px solid #1b2b3e;
+    font-size:12px;
+    color:#9eb0c5;
+}
+
+.log span{
+    color:#54dca0;
+}
+
+/* PROGRESS */
+.progress{
+    height:8px;
+    background:#18283b;
+    border-radius:8px;
+    overflow:hidden;
+    margin-top:10px;
+}
+
+.progress-bar{
+    height:100%;
+    width:72%;
+    background:#32a9ee;
+}
+
+/* SECTIONS */
+.section{
+    display:none;
+}
+
+.section.active{
+    display:block;
+}
+
+/* RESPONSIVE */
+@media(max-width:1000px){
+    .metrics{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .grid{
+        grid-template-columns:1fr;
+    }
+
+    .nodes{
+        grid-template-columns:repeat(3,1fr);
+    }
+}
+
+@media(max-width:700px){
+    .sidebar{
+        width:190px;
+    }
+
+    .main{
+        margin-left:190px;
+        width:calc(100% - 190px);
+        padding:15px;
+    }
+
+    .metrics{
+        grid-template-columns:1fr;
+    }
+
+    .nodes{
+        grid-template-columns:repeat(2,1fr);
+    }
+}
+</style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
-<div class="login" id="loginScreen">
-    <div class="login-box">
-        <h1>🔐 VAULT</h1>
+<div class="app">
 
-        <input type="text" id="username" placeholder="Username" value="admin">
-        <input type="password" id="password" placeholder="Password" value="admin">
+<!-- SIDEBAR -->
+<aside class="sidebar">
 
-        <button class="btn-primary" onclick="login()">Login</button>
-    </div>
-</div>
+    <div class="logo">VAU<span>LT</span></div>
+    <div class="subtitle">Distributed Object Storage</div>
 
-<div class="app" id="app" style="display:none;">
+    <div class="menu">
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
+        <div class="menu-title">Dashboard</div>
 
-        <div class="logo">
-            🔐 <span>VAULT</span>
-        </div>
+        <button class="active" onclick="showSection('overview',this)">
+            ◉ Overview
+        </button>
 
-        <div class="nav-title">Main</div>
+        <button onclick="showSection('objects',this)">
+            ◫ Objects
+        </button>
 
-        <div class="nav-item active" onclick="showPage('overview', this)">
-            📊 Overview
-        </div>
+        <button onclick="showSection('nodes',this)">
+            ◈ Storage Nodes
+        </button>
 
-        <div class="nav-item" onclick="showPage('objects', this)">
-            📦 Objects
-        </div>
+        <button onclick="showSection('replication',this)">
+            ⟳ Replication
+        </button>
 
-        <div class="nav-item" onclick="showPage('nodes', this)">
-            🖥️ Storage Nodes
-        </div>
+        <button onclick="showSection('topology',this)">
+            ◎ Topology
+        </button>
 
-        <div class="nav-item" onclick="showPage('replication', this)">
-            🔄 Replication
-        </div>
+        <div class="menu-title">Reliability</div>
 
-        <div class="nav-title">Operations</div>
+        <button onclick="showSection('failure',this)">
+            ⚠ Failure Simulator
+        </button>
 
-        <div class="nav-item" onclick="showPage('topology', this)">
-            🌐 Topology
-        </div>
+        <button onclick="showSection('integrity',this)">
+            ✓ Integrity
+        </button>
 
-        <div class="nav-item" onclick="showPage('failure', this)">
-            ⚠️ Failure Simulator
-        </div>
+        <button onclick="showSection('repair',this)">
+            ⚙ Auto Repair
+        </button>
 
-        <div class="nav-item" onclick="showPage('integrity', this)">
-            🛡️ Integrity
-        </div>
+        <button onclick="showSection('testing',this)">
+            🧪 Testing
+        </button>
 
-        <div class="nav-item" onclick="showPage('repair', this)">
-            🔧 Auto Repair
-        </div>
+        <div class="menu-title">System</div>
 
-        <div class="nav-item" onclick="showPage('rebalance', this)">
-            ⚖️ Rebalancing
-        </div>
+        <button onclick="showSection('monitoring',this)">
+            ◉ Monitoring
+        </button>
 
-        <div class="nav-title">AI & Monitoring</div>
+        <button onclick="showSection('logs',this)">
+            ≡ Event Logs
+        </button>
 
-        <div class="nav-item" onclick="showPage('ai', this)">
-            🤖 AI Operations
-        </div>
-
-        <div class="nav-item" onclick="showPage('monitoring', this)">
-            📈 Monitoring
-        </div>
-
-        <div class="nav-item" onclick="showPage('logs', this)">
-            📜 Event Logs
-        </div>
-
-        <div class="nav-item" onclick="showPage('settings', this)">
-            ⚙️ Settings
-        </div>
-
-    </aside>
-
-    <!-- MAIN -->
-    <main class="main">
-
-        <header class="topbar">
-            <input
-                class="search"
-                id="globalSearch"
-                type="text"
-                placeholder="Search objects, nodes..."
-                onkeyup="globalSearch()"
-            >
-
-            <div class="user">
-                <span>Administrator</span>
-                <div class="avatar">A</div>
-            </div>
-        </header>
-
-        <section class="content">
-
-            <!-- OVERVIEW -->
-            <div class="page active" id="overview">
-
-                <h1>Dashboard Overview</h1>
-                <p class="subtitle">
-                    Distributed object storage monitoring and management
-                </p>
-
-                <div class="cards">
-
-                    <div class="card">
-                        <div class="card-title">TOTAL OBJECTS</div>
-                        <div class="card-value blue" id="objectCount">1,284</div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-title">TOTAL STORAGE</div>
-                        <div class="card-value">3.8 TB</div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-title">ONLINE NODES</div>
-                        <div class="card-value green" id="onlineNodes">10 / 10</div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-title">SYSTEM HEALTH</div>
-                        <div class="card-value green">99.98%</div>
-                    </div>
-
-                </div>
-
-                <div class="grid-2">
-
-                    <div class="panel">
-
-                        <div class="panel-header">
-                            <div class="panel-title">Storage Usage</div>
-                            <span class="green">63%</span>
-                        </div>
-
-                        <div class="progress">
-                            <div class="progress-bar" style="width:63%"></div>
-                        </div>
-
-                        <br>
-
-                        <div style="display:flex;justify-content:space-between;color:#8792aa">
-                            <span>Used</span>
-                            <span>3.8 TB / 6 TB</span>
-                        </div>
-
-                    </div>
-
-                    <div class="panel">
-
-                        <div class="panel-header">
-                            <div class="panel-title">Replication Status</div>
-                        </div>
-
-                        <p style="color:#8792aa;margin-bottom:10px">
-                            Average replication factor
-                        </p>
-
-                        <div style="font-size:32px;font-weight:bold">
-                            3x
-                        </div>
-
-                        <span class="green">Healthy</span>
-
-                    </div>
-
-                </div>
-
-                <div class="panel">
-
-                    <div class="panel-header">
-                        <div class="panel-title">Recent Activity</div>
-                        <button class="btn-secondary" onclick="showPage('logs')">
-                            View All
-                        </button>
-                    </div>
-
-                    <div id="recentLogs"></div>
-
-                </div>
-
-            </div>
-
-            <!-- OBJECTS -->
-            <div class="page" id="objects">
-
-                <h1>Objects</h1>
-
-                <p class="subtitle">
-                    Upload and manage distributed objects
-                </p>
-
-                <div class="panel">
-
-                    <div class="upload-box" onclick="document.getElementById('fileInput').click()">
-
-                        <div class="upload-icon">☁️</div>
-
-                        <h3>Upload File</h3>
-
-                        <p style="color:#8290aa;margin:10px 0">
-                            Click here or select a file
-                        </p>
-
-                        <button class="btn-primary">
-                            Select File
-                        </button>
-
-                        <input
-                            type="file"
-                            id="fileInput"
-                            onchange="uploadFile(event)"
-                        >
-
-                    </div>
-
-                </div>
-
-                <div class="panel">
-
-                    <div class="panel-header">
-
-                        <div class="panel-title">
-                            Stored Objects
-                        </div>
-
-                        <button class="btn-primary" onclick="refreshObjects()">
-                            Refresh
-                        </button>
-
-                    </div>
-
-                    <table>
-
-                        <thead>
-                            <tr>
-                                <th>NAME</th>
-                                <th>SIZE</th>
-                                <th>HASH</th>
-                                <th>REPLICATION</th>
-                                <th>STATUS</th>
-                                <th>ACTION</th>
-                            </tr>
-                        </thead>
-
-                        <tbody id="objectTable"></tbody>
-
-                    </table>
-
-                </div>
-
-            </div>
-
-            <!-- NODES -->
-            <div class="page" id="nodes">
-
-                <h1>Storage Nodes</h1>
-
-                <p class="subtitle">
-                    Monitor distributed storage nodes
-                </p>
-
-                <div class="node-grid" id="nodeGrid"></div>
-
-            </div>
-
-            <!-- REPLICATION -->
-            <div class="page" id="replication">
-
-                <h1>Replication Manager</h1>
-
-                <p class="subtitle">
-                    Manage object replicas across nodes
-                </p>
-
-                <div class="panel">
-
-                    <div class="panel-header">
-                        <div class="panel-title">
-                            Replication Configuration
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Replication Factor</label>
-
-                        <select id="replicationFactor">
-                            <option value="1">1x</option>
-                            <option value="2">2x</option>
-                            <option value="3" selected>3x</option>
-                            <option value="4">4x</option>
-                            <option value="5">5x</option>
-                        </select>
-                    </div>
-
-                    <button class="btn-primary" onclick="updateReplication()">
-                        Update Configuration
-                    </button>
-
-                </div>
-
-                <div class="panel">
-
-                    <div class="panel-header">
-                        <div class="panel-title">
-                            Replica Distribution
-                        </div>
-                    </div>
-
-                    <table>
-
-                        <thead>
-                            <tr>
-                                <th>OBJECT</th>
-                                <th>PRIMARY NODE</th>
-                                <th>REPLICA 1</th>
-                                <th>REPLICA 2</th>
-                                <th>HEALTH</th>
-                            </tr>
-                        </thead>
-
-                        <tbody id="replicationTable"></tbody>
-
-                    </table>
-
-                </div>
-
-            </div>
-
-            <!-- TOPOLOGY -->
-            <div class="page" id="topology">
-
-                <h1>Cluster Topology</h1>
-
-                <p class="subtitle">
-                    Visual representation of the storage cluster
-                </p>
-
-                <div class="panel">
-
-                    <div style="text-align:center;padding:30px">
-
-                        <div style="
-                            margin:auto;
-                            width:120px;
-                            height:120px;
-                            border-radius:50%;
-                            background:#1d4ed8;
-                            display:flex;
-                            align-items:center;
-                            justify-content:center;
-                            font-size:40px;
-                        ">
-                            ☁️
-                        </div>
-
-                        <h2 style="margin:20px">
-                            VAULT Cluster
-                        </h2>
-
-                        <div
-                            id="topologyNodes"
-                            style="
-                            display:flex;
-                            flex-wrap:wrap;
-                            gap:20px;
-                            justify-content:center;
-                            "
-                        ></div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            <!-- FAILURE -->
-            <div class="page" id="failure">
-
-                <h1>Failure Simulator</h1>
-
-                <p class="subtitle">
-                    Simulate node failures and observe automatic recovery
-                </p>
-
-                <div class="panel">
-
-                    <div class="panel-header">
-                        <div class="panel-title">
-                            Select Node
-                        </div>
-                    </div>
-
-                    <select id="failureNode"
-                        style="
-                        width:100%;
-                        padding:12px;
-                        background:#0c1425;
-                        color:white;
-                        border:1px solid #34415d;
-                        border-radius:7px;
-                        ">
-                    </select>
-
-                    <br><br>
-
-                    <button class="btn-danger" onclick="simulateFailure()">
-                        Simulate Failure
-                    </button>
-
-                    <button class="btn-success" onclick="recoverAll()">
-                        Recover All
-                    </button>
-
-                </div>
-
-                <div class="panel">
-
-                    <div class="panel-title">
-                        Simulation Events
-                    </div>
-
-                    <div id="failureLogs"></div>
-
-                </div>
-
-            </div>
-
-            <!-- INTEGRITY -->
-            <div class="page" id="integrity">
-
-                <h1>Data Integrity</h1>
-
-                <p class="subtitle">
-                    Verify object hashes and storage consistency
-                </p>
-
-                <div class="cards">
-
-                    <div class="card">
-                        <div class="card-title">OBJECTS CHECKED</div>
-                        <div class="card-value blue">1,284</div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-title">VALID</div>
-                        <div class="card-value green">1,282</div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-title">CORRUPTED</div>
-                        <div class="card-value red">2</div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-title">INTEGRITY</div>
-                        <div class="card-value green">99.84%</div>
-                    </div>
-
-                </div>
-
-                <div class="panel">
-
-                    <button class="btn-primary" onclick="runIntegrityCheck()">
-                        Run Integrity Check
-                    </button>
-
-                    <div id="integrityResult" style="margin-top:20px"></div>
-
-                </div>
-
-            </div>
-
-            <!-- REPAIR -->
-            <div class="page" id="repair">
-
-                <h1>Auto Repair</h1>
-
-                <p class="subtitle">
-                    Automatic recovery and object repair
-                </p>
-
-                <div class="panel">
-
-                    <div class="panel-header">
-                        <div class="panel-title">
-                            Repair Queue
-                        </div>
-
-                        <button class="btn-primary" onclick="repairObjects()">
-                            Start Repair
-                        </button>
-                    </div>
-
-                    <div id="repairQueue">
-
-                        <div class="log">
-                            <span class="status status-warning">
-                                Pending
-                            </span>
-                            &nbsp; object_9821.bin
-                        </div>
-
-                        <div class="log">
-                            <span class="status status-warning">
-                                Pending
-                            </span>
-                            &nbsp; image_backup.jpg
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            <!-- REBALANCE -->
-            <div class="page" id="rebalance">
-
-                <h1>Cluster Rebalancing</h1>
-
-                <p class="subtitle">
-                    Balance data across storage nodes
-                </p>
-
-                <div class="panel">
-
-                    <div class="panel-header">
-                        <div class="panel-title">
-                            Current Distribution
-                        </div>
-
-                        <button class="btn-primary" onclick="startRebalance()">
-                            Start Rebalance
-                        </button>
-                    </div>
-
-                    <div id="rebalanceData"></div>
-
-                </div>
-
-            </div>
-
-            <!-- AI -->
-            <div class="page" id="ai">
-
-                <h1>AI Operations</h1>
-
-                <p class="subtitle">
-                    Intelligent cluster recommendations
-                </p>
-
-                <div class="panel">
-
-                    <div class="panel-header">
-                        <div class="panel-title">
-                            AI Recommendations
-                        </div>
-
-                        <button class="btn-primary" onclick="generateAI()">
-                            Analyze Cluster
-                        </button>
-                    </div>
-
-                    <div id="aiRecommendations">
-
-                        <div class="log">
-                            🤖 Cluster is operating normally.
-                        </div>
-
-                        <div class="log">
-                            💡 Consider increasing replication for critical objects.
-                        </div>
-
-                        <div class="log">
-                            💡 Node-07 has higher storage utilization.
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            <!-- MONITORING -->
-            <div class="page" id="monitoring">
-
-                <h1>Monitoring</h1>
-
-                <p class="subtitle">
-                    Real-time system metrics
-                </p>
-
-                <div class="cards">
-
-                    <div class="card">
-                        <div class="card-title">CPU USAGE</div>
-                        <div class="card-value">42%</div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-title">MEMORY</div>
-                        <div class="card-value">58%</div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-title">NETWORK</div>
-                        <div class="card-value">1.8 GB/s</div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-title">LATENCY</div>
-                        <div class="card-value green">23 ms</div>
-                    </div>
-
-                </div>
-
-                <div class="panel">
-
-                    <div class="panel-title">
-                        System Performance
-                    </div>
-
-                    <div style="
-                        height:250px;
-                        display:flex;
-                        align-items:end;
-                        gap:8px;
-                        padding:20px;
-                        " id="chart">
-                    </div>
-
-                </div>
-
-            </div>
-
-            <!-- LOGS -->
-            <div class="page" id="logs">
-
-                <h1>Event Logs</h1>
-
-                <p class="subtitle">
-                    System activity and audit events
-                </p>
-
-                <div class="panel">
-
-                    <div id="allLogs"></div>
-
-                </div>
-
-            </div>
-
-            <!-- SETTINGS -->
-            <div class="page" id="settings">
-
-                <h1>Settings</h1>
-
-                <p class="subtitle">
-                    Configure VAULT cluster
-                </p>
-
-                <div class="panel">
-
-                    <div class="form-group">
-                        <label>Cluster Name</label>
-                        <input type="text" value="VAULT-CLUSTER">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Default Replication Factor</label>
-
-                        <select>
-                            <option>1x</option>
-                            <option>2x</option>
-                            <option selected>3x</option>
-                            <option>4x</option>
-                            <option>5x</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Auto Repair</label>
-
-                        <select>
-                            <option selected>Enabled</option>
-                            <option>Disabled</option>
-                        </select>
-                    </div>
-
-                    <button class="btn-primary" onclick="saveSettings()">
-                        Save Settings
-                    </button>
-
-                </div>
-
-            </div>
-
-        </section>
-
-    </main>
-
-</div>
-
-<!-- OBJECT MODAL -->
-<div class="modal" id="objectModal">
-
-    <div class="modal-box">
-
-        <h2>Object Details</h2>
-
-        <div id="objectDetails"></div>
-
-        <br>
-
-        <button class="btn-secondary" onclick="closeModal()">
-            Close
+        <button onclick="showSection('settings',this)">
+            ⚙ Settings
         </button>
 
     </div>
+</aside>
+
+
+<!-- MAIN -->
+<main class="main">
+
+<div class="topbar">
+    <div>
+        <h1 id="pageTitle">VAULT Overview</h1>
+        <p style="color:#71839b;font-size:13px;margin-top:5px;">
+            Fault-tolerant distributed object storage platform
+        </p>
+    </div>
+
+    <div class="status">
+        ● Cluster Healthy
+    </div>
+</div>
+
+
+<!-- ================= OVERVIEW ================= -->
+
+<section id="overview" class="section active">
+
+<div class="metrics">
+
+    <div class="card">
+        <div class="metric-title">Storage Nodes</div>
+        <div class="metric-value" id="nodeMetric">10</div>
+        <div class="metric-small">● 9 Online</div>
+    </div>
+
+    <div class="card">
+        <div class="metric-title">Replication Factor</div>
+        <div class="metric-value">3x</div>
+        <div class="metric-small">Replica protected</div>
+    </div>
+
+    <div class="card">
+        <div class="metric-title">Objects</div>
+        <div class="metric-value">1,248</div>
+        <div class="metric-small">+12 today</div>
+    </div>
+
+    <div class="card">
+        <div class="metric-title">Data Integrity</div>
+        <div class="metric-value">100%</div>
+        <div class="metric-small">SHA-256 verified</div>
+    </div>
 
 </div>
 
-<!-- TOAST -->
-<div class="toast" id="toast"></div>
 
-<script>
+<div class="grid">
 
-let objects = [
-    {
-        name: "video_001.mp4",
-        size: "2.4 GB",
-        hash: "a8f92c7d",
-        replication: 3,
-        status: "Healthy"
-    },
-    {
-        name: "database_backup.sql",
-        size: "780 MB",
-        hash: "91b2f8a1",
-        replication: 3,
-        status: "Healthy"
-    },
-    {
-        name: "image_2026.jpg",
-        size: "12 MB",
-        hash: "72d92aa8",
-        replication: 3,
-        status: "Healthy"
-    },
-    {
-        name: "document.pdf",
-        size: "4.5 MB",
-        hash: "b72d8e21",
-        replication: 2,
-        status: "Healthy"
-    }
-];
+<div>
 
-let nodes = [];
+<div class="card">
+<h2>🎯 Problem → Solution</h2>
 
-for (let i = 1; i <= 10; i++) {
+<div class="problem-box">
 
-    nodes.push({
-        id: i,
-        name: "Node-" + String(i).padStart(2, "0"),
-        status: "Online",
-        storage: Math.floor(Math.random() * 30) + 45,
-        objects: Math.floor(Math.random() * 150) + 80
-    });
+<p>
+Traditional single-node storage can become unavailable when a storage
+node fails or becomes unreachable.
+</p>
 
-}
+<br>
 
-let logs = [
-    {
-        time: "05:12:22",
-        text: "Object video_001.mp4 uploaded successfully"
-    },
-    {
-        time: "05:09:10",
-        text: "Replication completed on Node-04"
-    },
-    {
-        time: "05:03:42",
-        text: "Integrity check completed"
-    },
-    {
-        time: "04:59:31",
-        text: "Node-08 heartbeat received"
-    }
-];
+<p>
+<b style="color:white;">VAULT</b> distributes objects across multiple
+storage nodes using replication, health monitoring, integrity verification
+and automatic recovery.
+</p>
 
+<br>
 
-/* LOGIN */
-
-function login() {
-
-    let username = document.getElementById("username").value;
-    let password = document.getElementById("password").value;
-
-    if (username && password) {
-
-        document.getElementById("loginScreen").style.display = "none";
-        document.getElementById("app").style.display = "flex";
-
-        showToast("Welcome to VAULT");
-
-        initialize();
-
-    } else {
-
-        showToast("Enter username and password");
-
-    }
-
-}
-
-
-/* PAGE NAVIGATION */
-
-function showPage(page, element) {
-
-    document.querySelectorAll(".page").forEach(function(p) {
-        p.classList.remove("active");
-    });
-
-    document.getElementById(page).classList.add("active");
-
-    document.querySelectorAll(".nav-item").forEach(function(item) {
-        item.classList.remove("active");
-    });
-
-    if (element) {
-        element.classList.add("active");
-    }
-
-    if (page === "objects") renderObjects();
-    if (page === "nodes") renderNodes();
-    if (page === "replication") renderReplication();
-    if (page === "topology") renderTopology();
-    if (page === "failure") renderFailureNodes();
-    if (page === "logs") renderLogs();
-    if (page === "rebalance") renderRebalance();
-}
-
-
-/* INITIALIZE */
-
-function initialize() {
-
-    renderObjects();
-    renderNodes();
-    renderReplication();
-    renderTopology();
-    renderLogs();
-    renderRecentLogs();
-    renderFailureNodes();
-    renderRebalance();
-    createChart();
-
-}
-
-
-/* OBJECTS */
-
-function renderObjects() {
-
-    let table = document.getElementById("objectTable");
-
-    table.innerHTML = "";
-
-    objects.forEach(function(obj, index) {
-
-        table.innerHTML += `
-            <tr>
-                <td>${obj.name}</td>
-
-                <td>${obj.size}</td>
-
-                <td>
-                    <span style="color:#6ea8fe">
-                        ${obj.hash}
-                    </span>
-                </td>
-
-                <td>${obj.replication}x</td>
-
-                <td>
-                    <span class="status status-online">
-                        ${obj.status}
-                    </span>
-                </td>
-
-                <td>
-                    <button
-                        class="btn-secondary"
-                        onclick="viewObject(${index})">
-                        View
-                    </button>
-                </td>
-            </tr>
-        `;
-
-    });
-
-    document.getElementById("objectCount").innerText =
-        (1284 + objects.length - 4).toLocaleString();
-
-}
-
-
-function viewObject(index) {
-
-    let obj = objects[index];
-
-    document.getElementById("objectDetails").innerHTML = `
-
-        <div class="log">
-            <b>Name:</b> ${obj.name}
-        </div>
-
-        <div class="log">
-            <b>Size:</b> ${obj.size}
-        </div>
-
-        <div class="log">
-            <b>SHA-256:</b> ${obj.hash}
-        </div>
-
-        <div class="log">
-            <b>Replication:</b> ${obj.replication}x
-        </div>
-
-        <div class="log">
-            <b>Status:</b>
-            <span class="green">${obj.status}</span>
-        </div>
-
-    `;
-
-    document.getElementById("objectModal").style.display = "flex";
-
-}
-
-
-function closeModal() {
-
-    document.getElementById("objectModal").style.display = "none";
-
-}
-
-
-/* FILE UPLOAD */
-
-async function uploadFile(event) {
-
-    let file = event.target.files[0];
-
-    if (!file) return;
-
-    showToast("Uploading " + file.name + "...");
-
-    let hash = await generateHash(file);
-
-    let size;
-
-    if (file.size < 1024 * 1024) {
-        size = (file.size / 1024).toFixed(2) + " KB";
-    } else if (file.size < 1024 * 1024 * 1024) {
-        size = (file.size / 1024 / 1024).toFixed(2) + " MB";
-    } else {
-        size = (file.size / 1024 / 1024 / 1024).toFixed(2) + " GB";
-    }
-
-    objects.unshift({
-        name: file.name,
-        size: size,
-        hash: hash.substring(0, 8),
-        replication: 3,
-        status: "Healthy"
-    });
-
-    addLog("Object " + file.name + " uploaded successfully");
-
-    renderObjects();
-
-    showToast("Upload completed");
-
-}
-
-
-async function generateHash(file) {
-
-    try {
-
-        let buffer = await file.arrayBuffer();
-
-        let hashBuffer =
-            await crypto.subtle.digest("SHA-256", buffer);
-
-        let hashArray =
-            Array.from(new Uint8Array(hashBuffer));
-
-        return hashArray
-            .map(function(b) {
-                return b.toString(16).padStart(2, "0");
-            })
-            .join("");
-
-    } catch (error) {
-
-        return Math.random()
-            .toString(16)
-            .substring(2);
-
-    }
-
-}
-
-
-function refreshObjects() {
-
-    renderObjects();
-
-    showToast("Objects refreshed");
-
-}
-
-
-/* NODES */
-
-function renderNodes() {
-
-    let grid = document.getElementById("nodeGrid");
-
-    grid.innerHTML = "";
-
-    nodes.forEach(function(node) {
-
-        let statusClass =
-            node.status === "Online"
-                ? "status-online"
-                : node.status === "Offline"
-                    ? "status-offline"
-                    : "status-warning";
-
-        grid.innerHTML += `
-
-            <div class="node">
-
-                <div class="node-head">
-
-                    <div class="node-name">
-                        ${node.name}
-                    </div>
-
-                    <div
-                        class="node-dot"
-                        style="background:
-                        ${node.status === "Online"
-                            ? "#32d583"
-                            : "#ff6675"}">
-                    </div>
-
-                </div>
-
-                <span class="status ${statusClass}">
-                    ${node.status}
-                </span>
-
-                <br><br>
-
-                <div style="color:#8490aa;font-size:12px">
-                    Storage
-                </div>
-
-                <div class="progress" style="margin-top:8px">
-                    <div
-                        class="progress-bar"
-                        style="width:${node.storage}%">
-                    </div>
-                </div>
-
-                <div style="
-                    display:flex;
-                    justify-content:space-between;
-                    margin-top:8px;
-                    font-size:12px;
-                    color:#8490aa;
-                    ">
-
-                    <span>
-                        ${node.storage}% used
-                    </span>
-
-                    <span>
-                        ${node.objects} objects
-                    </span>
-
-                </div>
-
-            </div>
-
-        `;
-
-    });
-
-    let online =
-        nodes.filter(n => n.status === "Online").length;
-
-    document.getElementById("onlineNodes").innerText =
-        online + " / " + nodes.length;
-
-}
-
-
-/* REPLICATION */
-
-function renderReplication() {
-
-    let table =
-        document.getElementById("replicationTable");
-
-    table.innerHTML = "";
-
-    objects.forEach(function(obj, index) {
-
-        let primary =
-            nodes[index % nodes.length].name;
-
-        let replica1 =
-            nodes[(index + 1) % nodes.length].name;
-
-        let replica2 =
-            nodes[(index + 2) % nodes.length].name;
-
-        table.innerHTML += `
-
-            <tr>
-
-                <td>${obj.name}</td>
-
-                <td>${primary}</td>
-
-                <td>${replica1}</td>
-
-                <td>${replica2}</td>
-
-                <td>
-                    <span class="status status-online">
-                        Healthy
-                    </span>
-                </td>
-
-            </tr>
-
-        `;
-
-    });
-
-}
-
-
-function updateReplication() {
-
-    let value =
-        document.getElementById("replicationFactor").value;
-
-    objects.forEach(function(obj) {
-        obj.replication = Number(value);
-    });
-
-    renderObjects();
-    renderReplication();
-
-    addLog(
-        "Replication factor changed to " + value + "x"
-    );
-
-    showToast(
-        "Replication updated to " + value + "x"
-    );
-
-}
-
-
-/* TOPOLOGY */
-
-function renderTopology() {
-
-    let container =
-        document.getElementById("topologyNodes");
-
-    container.innerHTML = "";
-
-    nodes.forEach(function(node) {
-
-        container.innerHTML += `
-
-            <div style="
-                width:120px;
-                padding:15px;
-                background:#151e34;
-                border:1px solid #2b3855;
-                border-radius:10px;
-            ">
-
-                <div style="font-size:25px">
-                    🖥️
-                </div>
-
-                <div style="margin-top:8px">
-                    ${node.name}
-                </div>
-
-                <div style="
-                    color:${node.status === "Online"
-                        ? "#32d583"
-                        : "#ff6675"};
-                    font-size:12px;
-                    margin-top:5px;
-                ">
-                    ● ${node.status}
-                </div>
-
-            </div>
-
-        `;
-
-    });
-
-}
-
-
-/* FAILURE SIMULATOR */
-
-function renderFailureNodes() {
-
-    let select =
-        document.getElementById("failureNode");
-
-    select.innerHTML = "";
-
-    nodes.forEach(function(node) {
-
-        select.innerHTML += `
-            <option value="${node.id}">
-                ${node.name}
-            </option>
-        `;
-
-    });
-
-}
-
-
-function simulateFailure() {
-
-    let id =
-        Number(document.getElementById("failureNode").value);
-
-    let node =
-        nodes.find(n => n.id === id);
-
-    if (!node) return;
-
-    node.status = "Offline";
-
-    addLog(
-        node.name + " failure simulated"
-    );
-
-    document.getElementById("failureLogs").innerHTML += `
-
-        <div class="log">
-
-            <span class="red">
-                ⚠ ${new Date().toLocaleTimeString()}
-            </span>
-
-            ${node.name} is offline
-
-        </div>
-
-    `;
-
-    renderNodes();
-    renderTopology();
-
-    showToast(node.name + " failed");
-
-}
-
-
-function recoverAll() {
-
-    nodes.forEach(function(node) {
-        node.status = "Online";
-    });
-
-    addLog("All nodes recovered");
-
-    renderNodes();
-    renderTopology();
-
-    showToast("All nodes recovered");
-
-}
-
-
-/* INTEGRITY */
-
-function runIntegrityCheck() {
-
-    let result =
-        document.getElementById("integrityResult");
-
-    result.innerHTML = `
-        <div class="log">
-            🔍 Scanning objects...
-        </div>
-    `;
-
-    setTimeout(function() {
-
-        result.innerHTML += `
-            <div class="log">
-                <span class="green">
-                    ✓ Integrity check completed successfully.
-                </span>
-            </div>
-
-            <div class="log">
-                1,284 objects checked.
-            </div>
-
-            <div class="log">
-                No critical corruption detected.
-            </div>
-        `;
-
-        addLog("Integrity check completed");
-
-        showToast("Integrity check completed");
-
-    }, 1200);
-
-}
-
-
-/* REPAIR */
-
-function repairObjects() {
-
-    let queue =
-        document.getElementById("repairQueue");
-
-    queue.innerHTML = `
-
-        <div class="log">
-            <span class="status status-warning">
-                Repairing
-            </span>
-            object_9821.bin
-        </div>
-
-        <div class="log">
-            <span class="status status-warning">
-                Repairing
-            </span>
-            image_backup.jpg
-        </div>
-
-    `;
-
-    setTimeout(function() {
-
-        queue.innerHTML = `
-
-            <div class="log">
-                <span class="status status-online">
-                    Repaired
-                </span>
-                object_9821.bin
-            </div>
-
-            <div class="log">
-                <span class="status status-online">
-                    Repaired
-                </span>
-                image_backup.jpg
-            </div>
-
-        `;
-
-        addLog("Automatic object repair completed");
-
-        showToast("Repair completed");
-
-    }, 1500);
-
-}
-
-
-/* REBALANCE */
-
-function renderRebalance() {
-
-    let div =
-        document.getElementById("rebalanceData");
-
-    div.innerHTML = "";
-
-    nodes.forEach(function(node) {
-
-        div.innerHTML += `
-
-            <div style="margin-bottom:18px">
-
-                <div style="
-                    display:flex;
-                    justify-content:space-between;
-                    margin-bottom:7px;
-                ">
-
-                    <span>${node.name}</span>
-
-                    <span>
-                        ${node.storage}% used
-                    </span>
-
-                </div>
-
-                <div class="progress">
-
-                    <div
-                        class="progress-bar"
-                        style="width:${node.storage}%">
-                    </div>
-
-                </div>
-
-            </div>
-
-        `;
-
-    });
-
-}
-
-
-function startRebalance() {
-
-    showToast("Rebalancing started...");
-
-    addLog("Cluster rebalancing started");
-
-    setTimeout(function() {
-
-        nodes.forEach(function(node) {
-
-            node.storage =
-                Math.floor(Math.random() * 10) + 55;
-
-        });
-
-        renderRebalance();
-        renderNodes();
-
-        addLog("Cluster rebalancing completed");
-
-        showToast("Rebalancing completed");
-
-    }, 1800);
-
-}
-
-
-/* AI */
-
-function generateAI() {
-
-    let box =
-        document.getElementById("aiRecommendations");
-
-    box.innerHTML = `
-
-        <div class="log">
-            🤖 Analyzing cluster health...
-        </div>
-
-    `;
-
-    setTimeout(function() {
-
-        box.innerHTML = `
-
-            <div class="log">
-                <span class="green">
-                    ✓ Cluster health: Excellent
-                </span>
-            </div>
-
-            <div class="log">
-                💡 Replication factor 3x is currently active.
-            </div>
-
-            <div class="log">
-                💡 Storage distribution is within acceptable range.
-            </div>
-
-            <div class="log">
-                💡 No immediate repair action is required.
-            </div>
-
-        `;
-
-        addLog("AI cluster analysis completed");
-
-        showToast("AI analysis completed");
-
-    }, 1200);
-
-}
-
-
-/* MONITORING CHART */
-
-function createChart() {
-
-    let chart =
-        document.getElementById("chart");
-
-    if (!chart) return;
-
-    chart.innerHTML = "";
-
-    for (let i = 0; i < 35; i++) {
-
-        let height =
-            Math.floor(Math.random() * 80) + 20;
-
-        chart.innerHTML += `
-
-            <div style="
-                flex:1;
-                height:${height}%;
-                background:#2563eb;
-                border-radius:3px 3px 0 0;
-                opacity:.8;
-            ">
-            </div>
-
-        `;
-
-    }
-
-}
-
-
-/* LOGS */
-
-function addLog(text) {
-
-    logs.unshift({
-        time: new Date().toLocaleTimeString(),
-        text: text
-    });
-
-    renderLogs();
-    renderRecentLogs();
-
-}
-
-
-function renderLogs() {
-
-    let container =
-        document.getElementById("allLogs");
-
-    if (!container) return;
-
-    container.innerHTML = "";
-
-    logs.forEach(function(log) {
-
-        container.innerHTML += `
-
-            <div class="log">
-
-                <span class="log-time">
-                    ${log.time}
-                </span>
-
-                ${log.text}
-
-            </div>
-
-        `;
-
-    });
-
-}
-
-
-function renderRecentLogs() {
-
-    let container =
-        document.getElementById("recentLogs");
-
-    if (!container) return;
-
-    container.innerHTML = "";
-
-    logs.slice(0, 5).forEach(function(log) {
-
-        container.innerHTML += `
-
-            <div class="log">
-
-                <span class="log-time">
-                    ${log.time}
-                </span>
-
-                ${log.text}
-
-            </div>
-
-        `;
-
-    });
-
-}
-
-
-/* SETTINGS */
-
-function saveSettings() {
-
-    addLog("System settings updated");
-
-    showToast("Settings saved successfully");
-
-}
-
-
-/* SEARCH */
-
-function globalSearch() {
-
-    let query =
-        document.getElementById("globalSearch")
-            .value
-            .toLowerCase()
-            .trim();
-
-    if (!query) {
-
-        renderObjects();
-
-        return;
-
-    }
-
-    let filtered =
-        objects.filter(function(obj) {
-
-            return obj.name
-                .toLowerCase()
-                .includes(query);
-
-        });
-
-    let table =
-        document.getElementById("objectTable");
-
-    table.innerHTML = "";
-
-    filtered.forEach(function(obj) {
-
-        let index =
-            objects.indexOf(obj);
-
-        table.innerHTML += `
-
-            <tr>
-
-                <td>${obj.name}</td>
-                <td>${obj.size}</td>
-                <td>${obj.hash}</td>
-                <td>${obj.replication}x</td>
-
-                <td>
-                    <span class="status status-online">
-                        ${obj.status}
-                    </span>
-                </td>
-
-                <td>
-                    <button
-                        class="btn-secondary"
-                        onclick="viewObject(${index})">
-                        View
-                    </button>
-                </td>
-
-            </tr>
-
-        `;
-
-    });
-
-}
-
-
-/* TOAST */
-
-function showToast(message) {
-
-    let toast =
-        document.getElementById("toast");
-
-    toast.innerText = message;
-
-    toast.style.display = "block";
-
-    setTimeout(function() {
-
-        toast.style.display = "none";
-
-    }, 2500);
-
-}
-
-</script>
-
-</body>
-</html>
+<p>
+<b style="color
